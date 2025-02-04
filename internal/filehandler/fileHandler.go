@@ -18,6 +18,7 @@ type fileHandler struct {
 	fileDesc *os.File
 }
 
+// TODO: Migrate communication error to channels
 func (f *fileHandler) Write(data []byte) ([]byte, error) {
 
 	if f.fileDesc == nil {

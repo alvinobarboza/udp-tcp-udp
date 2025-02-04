@@ -21,6 +21,7 @@ type tcpClient struct {
 	tcpAddr *net.TCPAddr
 }
 
+// TODO: Migrate communication error to channels
 func (tcp *tcpClient) Write(datagram []byte) ([]byte, error) {
 	conn, errD := net.DialTCP("tcp", nil, tcp.tcpAddr)
 	if errD != nil {
