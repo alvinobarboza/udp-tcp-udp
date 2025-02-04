@@ -42,4 +42,12 @@ func (f *fileHandler) NewFile(filename string) error {
 	return nil
 }
 
+func (f *fileHandler) Close() error {
+	err := f.fileDesc.Close()
+
+	f.fileDesc = nil
+
+	return err
+}
+
 var ErrNoFileAvailable = errors.New("no file created! try calling NewFile")
