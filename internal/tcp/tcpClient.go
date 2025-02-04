@@ -1,4 +1,4 @@
-package tcpclient
+package tcp
 
 import "net"
 
