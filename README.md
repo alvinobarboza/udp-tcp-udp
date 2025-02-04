@@ -1,4 +1,4 @@
-# UDP to TCP to UDP
+# UDP to TCP to UDP : Multicast mpegts stream
 
 This application has the intention to listen in a specific remote UDP IP and send its packets through TCP connection and convert back to UDP, all of this in the same order as received.
 
