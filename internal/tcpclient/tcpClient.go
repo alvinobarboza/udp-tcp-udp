@@ -3,7 +3,7 @@ package tcpclient
 import "net"
 
 type TCPClient interface {
-	SendMessage([]byte) ([]byte, error)
+	Write([]byte) ([]byte, error)
 }
 
 func NewTCPClient(servAddr string) (TCPClient, error) {
@@ -21,7 +21,7 @@ type tcpClient struct {
 	tcpAddr *net.TCPAddr
 }
 
-func (tcp *tcpClient) SendMessage(datagram []byte) ([]byte, error) {
+func (tcp *tcpClient) Write(datagram []byte) ([]byte, error) {
 	conn, errD := net.DialTCP("tcp", nil, tcp.tcpAddr)
 	if errD != nil {
 		return nil, errD
