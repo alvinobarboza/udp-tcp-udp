@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	//TODO: Args handling
 	defer fmt.Println("Exit                     ")
 	packetSize := 2000
 	tcpMultiplierBuf := 50
