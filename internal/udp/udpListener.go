@@ -2,11 +2,14 @@ package udp
 
 import (
 	"fmt"
+	"log"
+	"math/rand/v2"
 	"net"
+	"time"
 )
 
 type PktConsumer interface {
-	Write([]byte) ([]byte, error)
+	Write([]byte, chan error)
 }
 
 type UPDListener interface {
@@ -17,17 +20,17 @@ type UPDListener interface {
 type udpListener struct {
 	tcpMultiplierBuf int
 	packetSize       int
-	tcpPktSend       int
+	timerSeconds     int
 	eth              *net.Interface
 	udpAddr          *net.UDPAddr
 	writer           PktConsumer
 }
 
-func NewUDPListener(tcpMultiplierBuf, packetSize, tcpPktSend int, writer PktConsumer) UPDListener {
+func NewUDPListener(tcpMultiplierBuf, packetSize, timerSeconds int, writer PktConsumer) UPDListener {
 	return &udpListener{
 		tcpMultiplierBuf: tcpMultiplierBuf,
 		packetSize:       packetSize,
-		tcpPktSend:       tcpPktSend,
+		timerSeconds:     timerSeconds,
 		writer:           writer,
 	}
 }
@@ -57,37 +60,43 @@ func (ul *udpListener) Listen() error {
 	}
 	defer conn.Close()
 
-	counter := 0
+	done := ul.setTimeout()
+
+	errorTerminator := make(chan error)
 	for {
-		if ul.tcpPktSend > 0 {
-			counter++
-
-		}
-		if counter == ul.tcpPktSend {
-			break
-		}
-
-		tcpBuffer := make([]byte, 0)
-
-		for i := 0; i < ul.tcpMultiplierBuf; i++ {
-			buf := make([]byte, ul.packetSize)
-			countBytes, _, errC := conn.ReadFrom(buf)
-
-			if errC != nil {
-				return errC
-			}
-			tcpBuffer = append(tcpBuffer, buf[:countBytes]...)
-			fmt.Printf("%v %v %v %v\r", countBytes, i, len(tcpBuffer), counter)
-		}
-
-		// TODO:Migrate to goroutine
-		// channels to break loop in case of error
-		_, err := ul.writer.Write(tcpBuffer)
-		if err != nil {
+		select {
+		case res := <-done:
+			log.Println(res)
+			return nil
+		case err := <-errorTerminator:
+			log.Println(err)
 			return err
+		default:
+			tcpBuffer := make([]byte, 0)
+
+			for i := 0; i < ul.tcpMultiplierBuf; i++ {
+				buf := make([]byte, ul.packetSize)
+				countBytes, _, errC := conn.ReadFrom(buf)
+
+				if errC != nil {
+					return errC
+				}
+				tcpBuffer = append(tcpBuffer, buf[:countBytes]...)
+				fmt.Printf("%04d %08d\r", countBytes, len(tcpBuffer))
+			}
+
+			go ul.writer.Write(tcpBuffer, errorTerminator)
 		}
-
 	}
+}
 
-	return nil
+func (ul *udpListener) setTimeout() chan string {
+	done := make(chan string)
+	if ul.timerSeconds > 0 {
+		go func() {
+			time.Sleep(time.Duration(rand.IntN(ul.timerSeconds)) * time.Second)
+			done <- "Time ended!"
+		}()
+	}
+	return done
 }
