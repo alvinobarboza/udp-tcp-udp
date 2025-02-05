@@ -8,15 +8,17 @@ import (
 )
 
 func main() {
-	defer fmt.Println("Exit")
+	defer fmt.Println("Exit                     ")
 	packetSize := 2000
 	tcpMultiplierBuf := 50
-	tcpPktSend := 40
+	timerSeconds := 10
 
 	file := filehandler.NewFileHandler()
-	file.NewFile("teste.bin")
+	if err := file.NewFile("as/teste.bin"); err != nil {
+		panic(err)
+	}
 
-	udpListener := udp.NewUDPListener(tcpMultiplierBuf, packetSize, tcpPktSend, file)
+	udpListener := udp.NewUDPListener(tcpMultiplierBuf, packetSize, timerSeconds, file)
 
 	if err := udpListener.SetUpListener("Ethernet", "234.50.99.3:6000"); err != nil {
 		panic(err)
