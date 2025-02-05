@@ -6,7 +6,7 @@ import (
 )
 
 type FileHandler interface {
-	Write([]byte) ([]byte, error)
+	Write([]byte, chan error)
 	NewFile(string) error
 }
 
@@ -18,18 +18,18 @@ type fileHandler struct {
 	fileDesc *os.File
 }
 
-// TODO: Migrate communication error to channels
-func (f *fileHandler) Write(data []byte) ([]byte, error) {
+func (f *fileHandler) Write(data []byte, err chan error) {
 
 	if f.fileDesc == nil {
-		return nil, ErrNoFileAvailable
+		err <- ErrNoFileAvailable
+		return
 	}
 
 	_, errW := f.fileDesc.Write(data)
 	if errW != nil {
-		return nil, errW
+		err <- errW
+		return
 	}
-	return nil, nil
 }
 
 func (f *fileHandler) NewFile(filename string) error {

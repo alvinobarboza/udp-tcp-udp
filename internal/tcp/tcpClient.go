@@ -3,7 +3,7 @@ package tcp
 import "net"
 
 type TCPClient interface {
-	Write([]byte) ([]byte, error)
+	Write([]byte, chan error)
 }
 
 func NewTCPClient(servAddr string) (TCPClient, error) {
@@ -22,24 +22,26 @@ type tcpClient struct {
 }
 
 // TODO: Migrate communication error to channels
-func (tcp *tcpClient) Write(datagram []byte) ([]byte, error) {
+func (tcp *tcpClient) Write(datagram []byte, err chan error) {
 	conn, errD := net.DialTCP("tcp", nil, tcp.tcpAddr)
 	if errD != nil {
-		return nil, errD
+		err <- errD
+		return
 	}
 
 	_, err1 := conn.Write(datagram)
 	if err1 != nil {
-		return nil, err1
+		err <- err1
+		return
 	}
 
 	reply := make([]byte, 0)
 
 	_, err2 := conn.Read(reply)
 	if err2 != nil {
-		return nil, err2
+		err <- err2
+		return
 	}
 
 	conn.Close()
-	return reply, nil
 }
