@@ -14,7 +14,7 @@ func main() {
 	timerSeconds := 10
 
 	file := filehandler.NewFileHandler()
-	if err := file.NewFile("as/teste.bin"); err != nil {
+	if err := file.NewFile("teste.bin"); err != nil {
 		panic(err)
 	}
 

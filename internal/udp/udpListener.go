@@ -3,7 +3,6 @@ package udp
 import (
 	"fmt"
 	"log"
-	"math/rand/v2"
 	"net"
 	"time"
 )
@@ -94,7 +93,7 @@ func (ul *udpListener) setTimeout() chan string {
 	done := make(chan string)
 	if ul.timerSeconds > 0 {
 		go func() {
-			time.Sleep(time.Duration(rand.IntN(ul.timerSeconds)) * time.Second)
+			time.Sleep(time.Duration(ul.timerSeconds) * time.Second)
 			done <- "Time ended!"
 		}()
 	}
