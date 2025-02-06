@@ -11,7 +11,7 @@ type PktConsumer interface {
 	Write([]byte, chan error)
 }
 
-type UPDListener interface {
+type UDPListener interface {
 	SetUpListener(ethName, udpIp string) error
 	Listen() error
 }
@@ -25,7 +25,7 @@ type udpListener struct {
 	writer           PktConsumer
 }
 
-func NewUDPListener(tcpMultiplierBuf, packetSize, timerSeconds int, writer PktConsumer) UPDListener {
+func NewUDPListener(tcpMultiplierBuf, packetSize, timerSeconds int, writer PktConsumer) UDPListener {
 	return &udpListener{
 		tcpMultiplierBuf: tcpMultiplierBuf,
 		packetSize:       packetSize,
