@@ -8,6 +8,7 @@ import (
 type FileHandler interface {
 	Write([]byte, chan error)
 	NewFile(string) error
+	CloseConn()
 }
 
 func NewFileHandler() FileHandler {
@@ -50,5 +51,7 @@ func (f *fileHandler) Close() error {
 
 	return err
 }
+
+func (f *fileHandler) CloseConn() {}
 
 var ErrNoFileAvailable = errors.New("no file created! try calling NewFile")
