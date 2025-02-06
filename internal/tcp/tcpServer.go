@@ -64,7 +64,7 @@ func (ts *tcpServer) handlRequest(conn net.Conn, err chan error) {
 
 	if errM != nil {
 		conn.Close()
-		log.Println(errM)
+		err <- errM
 	}
 
 	ts.pktWriter.Write(body[0:read], err)
