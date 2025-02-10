@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/alvinobarboza/udp-tcp-udp/internal/args"
-	"github.com/alvinobarboza/udp-tcp-udp/internal/udp"
+	"github.com/alvinobarboza/udp-tcp-udp/internal/udpclient"
 )
 
 func main() {
@@ -35,14 +35,14 @@ func main() {
 	// 	panic(err)
 	// }
 
-	tcpCon, errc := tcp.NewTCPClient("localhost:3002")
+	tcpCon, errc := udpclient.NewTCPClient(serverIp)
 	if errc != nil {
 		panic(errc)
 	}
 
-	udpListener := udp.NewUDPListener(tcpMultiplierBuf, packetSize, timerSeconds, tcpCon)
+	udpListener := udpclient.NewUDPListener(mpegtsBufSize, mpegtsPktSize, timerNumber, tcpCon, nil)
 
-	if err := udpListener.SetUpListener("Ethernet", "234.50.99.2:6000"); err != nil {
+	if err := udpListener.SetUpListener(ethName, mcastIp); err != nil {
 		panic(err)
 	}
 

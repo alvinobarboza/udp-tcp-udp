@@ -1,6 +1,9 @@
-package tcp
+package udpclient
 
-import "net"
+import (
+	"fmt"
+	"net"
+)
 
 type TCPClient interface {
 	Write([]byte, chan error)
@@ -18,7 +21,8 @@ func NewTCPClient(servAddr string) (TCPClient, error) {
 }
 
 type tcpClient struct {
-	tcpAddr *net.TCPAddr
+	tcpAddr    *net.TCPAddr
+	pktCounter uint8
 }
 
 func (tcp *tcpClient) Write(datagram []byte, err chan error) {
@@ -27,6 +31,12 @@ func (tcp *tcpClient) Write(datagram []byte, err chan error) {
 		err <- errD
 		return
 	}
+	defer conn.Close()
+
+	size := len(datagram)
+	tcp.pktCounter++
+
+	fmt.Printf("%02d %06d        \r", tcp.pktCounter, size)
 
 	_, err1 := conn.Write(datagram)
 	if err1 != nil {
@@ -42,5 +52,5 @@ func (tcp *tcpClient) Write(datagram []byte, err chan error) {
 		return
 	}
 
-	conn.Close()
+	// err <- fmt.Errorf("Endend")
 }

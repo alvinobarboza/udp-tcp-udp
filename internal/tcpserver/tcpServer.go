@@ -1,34 +1,34 @@
-package tcp
+package tcpserver
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"net"
-)
 
-type PktWriter interface {
-	Write([]byte, chan error)
-	CloseConn()
-}
+	"github.com/alvinobarboza/udp-tcp-udp/internal/filehandler"
+)
 
 type TCPServer interface {
 	Listen() error
 }
 
 type tcpServer struct {
-	pktWriter PktWriter
-	ipAddr    string
+	udp    UDPSender
+	file   filehandler.FileHandler
+	ipAddr string
 }
 
-func NewTCPServer(ipaddr string, pktWriter PktWriter) TCPServer {
+func NewTCPServer(ipaddr string, udp UDPSender, file filehandler.FileHandler) TCPServer {
 	return &tcpServer{
-		pktWriter: pktWriter,
-		ipAddr:    ipaddr,
+		udp:    udp,
+		file:   file,
+		ipAddr: ipaddr,
 	}
 }
 
 func (ts *tcpServer) Listen() error {
-	defer ts.pktWriter.CloseConn()
+	defer ts.udp.CloseConn()
 
 	listener, err := net.Listen("tcp", ts.ipAddr)
 	if err != nil {
@@ -59,7 +59,7 @@ func (ts *tcpServer) handlRequest(conn net.Conn, err chan error) {
 	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
-	body := make([]byte, 65_800)
+	body := make([]byte, 1500)
 	read, errM := reader.Read(body)
 
 	if errM != nil {
@@ -67,8 +67,9 @@ func (ts *tcpServer) handlRequest(conn net.Conn, err chan error) {
 		err <- errM
 		return
 	}
+	fmt.Printf("Size: %02d \n", read)
 
-	ts.pktWriter.Write(body[0:read], err)
+	// ts.pktWriter.Write(body[0:read], err)
 
 	conn.Write([]byte("Received"))
 }

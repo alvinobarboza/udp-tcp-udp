@@ -1,15 +1,12 @@
-package udp
+package udpclient
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"time"
-)
 
-type PktConsumer interface {
-	Write([]byte, chan error)
-}
+	"github.com/alvinobarboza/udp-tcp-udp/internal/filehandler"
+)
 
 type UDPListener interface {
 	SetUpListener(ethName, udpIp string) error
@@ -22,15 +19,24 @@ type udpListener struct {
 	timerSeconds     int
 	eth              *net.Interface
 	udpAddr          *net.UDPAddr
-	writer           PktConsumer
+	tcpHandler       TCPClient
+	fileHandler      filehandler.FileHandler
 }
 
-func NewUDPListener(tcpMultiplierBuf, packetSize, timerSeconds int, writer PktConsumer) UDPListener {
+func NewUDPListener(
+	tcpMultiplierBuf,
+	packetSize,
+	timerSeconds int,
+	tcp TCPClient,
+	file filehandler.FileHandler,
+) UDPListener {
+
 	return &udpListener{
 		tcpMultiplierBuf: tcpMultiplierBuf,
 		packetSize:       packetSize,
 		timerSeconds:     timerSeconds,
-		writer:           writer,
+		tcpHandler:       tcp,
+		fileHandler:      file,
 	}
 }
 
@@ -81,10 +87,11 @@ func (ul *udpListener) Listen() error {
 					return errC
 				}
 				tcpBuffer = append(tcpBuffer, buf[:countBytes]...)
-				fmt.Printf("%04d %08d\r", countBytes, len(tcpBuffer))
+				// fmt.Printf("%04d %08d\r", countBytes, len(tcpBuffer))
 			}
 
-			go ul.writer.Write(tcpBuffer, errorTerminator)
+			go ul.tcpHandler.Write(tcpBuffer, errorTerminator)
+			// time.Sleep(1 * time.Second)
 		}
 	}
 }
