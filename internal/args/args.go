@@ -98,13 +98,13 @@ Options:
 var ErrMandatoryArg = errors.New("missing mandatory argmunt")
 
 func HelpClient(args []string) {
-	if args[1] == "-h" {
+	if len(args) > 1 && args[1] == "-h" {
 		messageAndExit(USAGE_MESSAGE_CLIENT)
 	}
 }
 
 func HelpServer(args []string) {
-	if args[1] == "-h" {
+	if len(args) > 1 && args[1] == "-h" {
 		messageAndExit(USAGE_MESSAGE_SERVER)
 	}
 }
