@@ -62,39 +62,48 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 	_, errH := conn.Read(header)
 
 	if errH != nil {
+		fmt.Println()
+		fmt.Println()
 		log.Println(errH, local, header)
+		fmt.Println()
 		return
 	}
 
 	if eofFromClient(header) {
+		fmt.Println()
 		log.Println("Closed early by client", local)
+		fmt.Println()
 		return
 	}
 
 	pCount := binary.LittleEndian.Uint16(header[0:2])
 	pSize := binary.LittleEndian.Uint16(header[2:4])
-	fmt.Printf("\nSize: %02d counter: %02d - %d\n", pSize, pCount, header)
 
 	data := make([]byte, pSize)
+	// dataToWrite := make([]byte, 0)
 	for {
 		dRead, errR := conn.Read(data)
 
 		if errR != nil {
+			fmt.Println()
 			log.Println(errR, "req: ", pCount)
+			fmt.Println()
 			return
 		}
 		if dRead == 5 && eofFromClient(data) {
-			log.Println("Closed early by client", local, pCount)
+			fmt.Println()
+			log.Println("Closed betwen transmission", local, pCount)
+			fmt.Println()
 			return
 		}
 		if dRead == 2 {
-			fmt.Println("\nClosed", data[:dRead])
 			break
 		}
-		fmt.Printf("read: %02d\r", dRead)
+		ts.udp.Write(data)
+		// dataToWrite = append(dataToWrite, data...)
 	}
 
-	// ts.pktWriter.Write(body[0:read], err)
+	// ts.file.Write(dataToWrite)
 
 	conn.Write([]byte("Received"))
 }
