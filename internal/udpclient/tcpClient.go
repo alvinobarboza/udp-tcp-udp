@@ -65,7 +65,7 @@ func (tcp *tcpClient) Write(
 	tcp.pktCounter++
 	local := tcp.pktCounter
 	tcp.mu.Unlock()
-	fmt.Println("\nNEW============>", local)
+	fmt.Println("Conn n:", local)
 
 	header := append(intToByte(local), intToByte(uint16(args.MPEGTS_PKT_DEFAULT))...)
 
@@ -83,10 +83,10 @@ func (tcp *tcpClient) Write(
 				err <- err1
 				return
 			}
-			if local%2 == 0 {
-				fmt.Printf("\t\t")
-			}
-			fmt.Printf("Curr %02d %d\r", local, len(pktToSend))
+			// if local%2 == 0 {
+			// 	fmt.Printf("\t\t")
+			// }
+			// fmt.Printf("Curr %02d %d\r", local, len(pktToSend))
 			pktToSend = make([]byte, 0)
 		}
 		pktToSend = append(pktToSend, data)
