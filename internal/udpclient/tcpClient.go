@@ -10,7 +10,7 @@ import (
 )
 
 type TCPClient interface {
-	Write([]byte, chan error)
+	GetConn() (net.Conn, error)
 }
 
 func NewTCPClient(servAddr string) (TCPClient, error) {
@@ -30,12 +30,13 @@ type tcpClient struct {
 	pktCounter uint16
 }
 
-func (tcp *tcpClient) Write(datagram []byte, err chan error) {
-	conn, errD := net.DialTCP("tcp", nil, tcp.tcpAddr)
-	if errD != nil {
-		err <- errD
-		return
+func (tcp *tcpClient) GetConn() (net.Conn, error) {
+	conn, err := net.DialTCP("tcp", nil, tcp.tcpAddr)
+	if err != nil {
+		return nil, err
 	}
+	return conn, nil
+}
 	defer conn.Close()
 
 	tcp.mu.Lock()

@@ -69,6 +69,10 @@ func (ul *udpListener) Listen() error {
 
 	errorTerminator := make(chan error)
 	for {
+		tcpCon, errCon := ul.tcpHandler.GetConn()
+		if errCon != nil {
+			return errCon
+		}
 		select {
 		case res := <-done:
 			log.Println(res)
