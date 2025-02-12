@@ -39,20 +39,13 @@ func (ts *tcpServer) Listen() error {
 
 	log.Println("Listening on:", ts.ipAddr)
 
-	errChann := make(chan error)
-
 	for {
-		select {
-		case errC := <-errChann:
+		conn, errC := listener.Accept()
+		if errC != nil {
 			return errC
-		default:
-			conn, errC := listener.Accept()
-			if errC != nil {
-				return errC
-			}
-
-			go ts.handlRequest(conn, errChann)
 		}
+
+		go ts.handlRequest(conn)
 	}
 }
 
