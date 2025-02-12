@@ -3,7 +3,7 @@ package tcpserver
 import "net"
 
 type UDPSender interface {
-	Write([]byte, chan error)
+	Write([]byte) error
 	CloseConn()
 }
 
@@ -36,11 +36,12 @@ type udpSender struct {
 	conn   *net.UDPConn
 }
 
-func (ud *udpSender) Write(data []byte, err chan error) {
-	_, err1 := ud.conn.Write(data)
-	if err1 != nil {
-		err <- err1
+func (ud *udpSender) Write(data []byte) error {
+	_, err := ud.conn.Write(data)
+	if err != nil {
+		return err
 	}
+	return nil
 }
 
 func (us *udpSender) CloseConn() {

@@ -6,7 +6,7 @@ import (
 )
 
 type FileHandler interface {
-	Write([]byte, chan error)
+	Write([]byte) error
 	NewFile(string) error
 	CloseConn()
 }
@@ -19,18 +19,17 @@ type fileHandler struct {
 	fileDesc *os.File
 }
 
-func (f *fileHandler) Write(data []byte, err chan error) {
+func (f *fileHandler) Write(data []byte) error {
 
 	if f.fileDesc == nil {
-		err <- ErrNoFileAvailable
-		return
+		return ErrNoFileAvailable
 	}
 
 	_, errW := f.fileDesc.Write(data)
 	if errW != nil {
-		err <- errW
-		return
+		return errW
 	}
+	return nil
 }
 
 func (f *fileHandler) NewFile(filename string) error {
