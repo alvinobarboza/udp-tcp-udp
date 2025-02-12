@@ -77,13 +77,16 @@ func (tcp *tcpClient) Write(
 
 	pktToSend := make([]byte, 0)
 	for i, data := range datagram {
-		if i%args.TS_PACKET_DEFAULT == 0 && len(pktToSend) > 0 {
-			// _, err1 := conn.Write(pktToSend)
-			// if err1 != nil {
-			// 	err <- err1
-			// 	return
-			// }
-			fmt.Printf("Curr %02d size %02d\r", local, i)
+		if i%args.MPEGTS_PKT_DEFAULT == 0 && len(pktToSend) > 0 {
+			_, err1 := conn.Write(pktToSend)
+			if err1 != nil {
+				err <- err1
+				return
+			}
+			if local%2 == 0 {
+				fmt.Printf("\t\t")
+			}
+			fmt.Printf("Curr %02d %d\r", local, len(pktToSend))
 			pktToSend = make([]byte, 0)
 		}
 		pktToSend = append(pktToSend, data)
