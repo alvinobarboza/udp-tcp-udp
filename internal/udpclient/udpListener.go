@@ -66,8 +66,9 @@ func (ul *udpListener) Listen() error {
 	defer conn.Close()
 
 	done := ul.setTimeout()
-
 	errorTerminator := make(chan error)
+	connTerminator := make(chan string)
+
 	for {
 		tcpCon, errCon := ul.tcpHandler.GetConn()
 		if errCon != nil {
@@ -75,10 +76,13 @@ func (ul *udpListener) Listen() error {
 		}
 		select {
 		case res := <-done:
+			close(connTerminator)
+			ul.tcpHandler.Close(tcpCon)
 			log.Println(res)
 			return nil
 		case err := <-errorTerminator:
-			log.Println(err)
+			close(connTerminator)
+			ul.tcpHandler.Close(tcpCon)
 			return err
 		default:
 			tcpBuffer := make([]byte, 0)
@@ -91,11 +95,9 @@ func (ul *udpListener) Listen() error {
 					return errC
 				}
 				tcpBuffer = append(tcpBuffer, buf[:countBytes]...)
-				// fmt.Printf("%04d %08d\r", countBytes, len(tcpBuffer))
 			}
 
-			go ul.tcpHandler.Write(tcpBuffer, errorTerminator)
-			// time.Sleep(1 * time.Second)
+			go ul.tcpHandler.Write(tcpCon, tcpBuffer, errorTerminator, connTerminator)
 		}
 	}
 }

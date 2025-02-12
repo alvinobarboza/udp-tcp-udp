@@ -10,7 +10,9 @@ import (
 )
 
 type TCPClient interface {
+	Write(net.Conn, []byte, chan error, chan string)
 	GetConn() (net.Conn, error)
+	Close(net.Conn) error
 }
 
 func NewTCPClient(servAddr string) (TCPClient, error) {
@@ -37,15 +39,37 @@ func (tcp *tcpClient) GetConn() (net.Conn, error) {
 	}
 	return conn, nil
 }
+
+func (tcp *tcpClient) Close(conn net.Conn) error {
+	_, err2 := conn.Write([]byte{0xff, 0xff, 0xff, 0xff, 0xff})
+	if err2 != nil {
+		return err2
+	}
+	return conn.Close()
+}
+
+func (tcp *tcpClient) Write(
+	conn net.Conn, datagram []byte,
+	err chan error, t chan string,
+) {
 	defer conn.Close()
+
+	go func(c net.Conn, terminator chan string) {
+		value := <-terminator
+		if value == "" {
+			tcp.Close(c)
+		}
+	}(conn, t)
 
 	tcp.mu.Lock()
 	tcp.pktCounter++
 	local := tcp.pktCounter
 	tcp.mu.Unlock()
-	fmt.Println("\nNEW============>", tcp.pktCounter)
+	fmt.Println("\nNEW============>", local)
 
-	_, err1 := conn.Write(intToByte(local))
+	header := append(intToByte(local), intToByte(uint16(args.MPEGTS_PKT_DEFAULT))...)
+
+	_, err1 := conn.Write(header)
 	if err1 != nil {
 		err <- err1
 		return
@@ -65,20 +89,20 @@ func (tcp *tcpClient) GetConn() (net.Conn, error) {
 		pktToSend = append(pktToSend, data)
 	}
 
-	// size := len(datagram)
-	// tcp.pktCounter++
-
-	// fmt.Printf("%02d %06d        \r", tcp.pktCounter, size)
-
-	reply := make([]byte, 1024)
-
-	_, err2 := conn.Read(reply)
+	_, err2 := conn.Write([]byte{0xff, 0xff})
 	if err2 != nil {
 		err <- err2
 		return
 	}
 
-	// err <- fmt.Errorf("endend")
+	reply := make([]byte, 1024)
+
+	_, err3 := conn.Read(reply)
+	if err3 != nil {
+		err <- err3
+		return
+	}
+	t <- "ok"
 }
 
 func intToByte(n uint16) []byte {
