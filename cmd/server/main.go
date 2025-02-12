@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/alvinobarboza/udp-tcp-udp/internal/args"
@@ -20,6 +21,7 @@ func main() {
 
 	args.ValidateMandatoryServer(listenIp, localMcastIp, remoteMcastIp)
 
+	log.SetFlags(log.Lshortfile)
 	// file := filehandler.NewFileHandler()
 	// file.NewFile("teste.bin")
 
