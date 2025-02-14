@@ -58,7 +58,7 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 	local := ts.counter
 	ts.mu.Unlock()
 
-	header := make([]byte, 5)
+	header := make([]byte, 14)
 	_, errH := conn.Read(header)
 
 	if errH != nil {
@@ -76,9 +76,11 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 		return
 	}
 
-	pCount := binary.LittleEndian.Uint16(header[0:2])
-	pSize := binary.LittleEndian.Uint16(header[2:4])
+	pCount := binary.LittleEndian.Uint64(header[0:8])
+	pMs := binary.LittleEndian.Uint32(header[8:12])
+	pSize := binary.LittleEndian.Uint16(header[12:14])
 
+	fmt.Println(pCount, pMs, pSize)
 	data := make([]byte, pSize)
 	// dataToWrite := make([]byte, 0)
 	for {
@@ -90,6 +92,7 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 			fmt.Println()
 			return
 		}
+		fmt.Printf("%02d\n", dRead)
 		if dRead == 5 && eofFromClient(data) {
 			fmt.Println()
 			log.Println("Closed betwen transmission", local, pCount)
