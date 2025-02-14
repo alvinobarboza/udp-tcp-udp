@@ -1,16 +1,16 @@
 package udpclient
 
 import (
-	"encoding/binary"
 	"fmt"
 	"net"
 	"sync"
 
 	"github.com/alvinobarboza/udp-tcp-udp/internal/args"
+	"github.com/alvinobarboza/udp-tcp-udp/internal/utils"
 )
 
 type TCPClient interface {
-	Write(net.Conn, []byte, chan error, chan string)
+	Write(net.Conn, *utils.TCPBuffData, chan error, chan string)
 	GetConn() (net.Conn, error)
 	Close(net.Conn) error
 }
@@ -49,7 +49,7 @@ func (tcp *tcpClient) Close(conn net.Conn) error {
 }
 
 func (tcp *tcpClient) Write(
-	conn net.Conn, datagram []byte,
+	conn net.Conn, datagram *utils.TCPBuffData,
 	err chan error, t chan string,
 ) {
 	defer conn.Close()
@@ -61,13 +61,13 @@ func (tcp *tcpClient) Write(
 		}
 	}(conn, t)
 
-	tcp.mu.Lock()
-	tcp.pktCounter++
-	local := tcp.pktCounter
-	tcp.mu.Unlock()
-	fmt.Println("Conn n:", local)
+	fmt.Println("Conn:", datagram.Counter, datagram.MS)
 
-	header := append(intToByte(local), intToByte(uint16(args.MPEGTS_PKT_DEFAULT))...)
+	header := headerData(
+		datagram.Counter,
+		datagram.MS,
+		uint16(args.MPEGTS_PKT_DEFAULT),
+	)
 
 	_, err1 := conn.Write(header)
 	if err1 != nil {
@@ -76,20 +76,24 @@ func (tcp *tcpClient) Write(
 	}
 
 	pktToSend := make([]byte, 0)
-	for i, data := range datagram {
+	for i, data := range datagram.Data {
 		if i%args.MPEGTS_PKT_DEFAULT == 0 && len(pktToSend) > 0 {
 			_, err1 := conn.Write(pktToSend)
 			if err1 != nil {
 				err <- err1
 				return
 			}
-			// if local%2 == 0 {
-			// 	fmt.Printf("\t\t")
-			// }
-			// fmt.Printf("Curr %02d %d\r", local, len(pktToSend))
 			pktToSend = make([]byte, 0)
 		}
 		pktToSend = append(pktToSend, data)
+	}
+
+	if len(pktToSend) > 0 && len(pktToSend) < args.MPEGTS_PKT_DEFAULT {
+		_, err1 := conn.Write(pktToSend)
+		if err1 != nil {
+			err <- err1
+			return
+		}
 	}
 
 	_, err2 := conn.Write([]byte{0xff, 0xff})
@@ -108,8 +112,10 @@ func (tcp *tcpClient) Write(
 	t <- "ok"
 }
 
-func intToByte(n uint16) []byte {
-	bs := make([]byte, 2)
-	binary.LittleEndian.PutUint16(bs, n)
-	return bs
+func headerData(count uint64, ms uint32, size uint16) []byte {
+	header := append(
+		utils.Int64ToByte(count),
+		utils.Int32ToByte(ms)...,
+	)
+	return append(header, utils.Int16ToByte(size)...)
 }
