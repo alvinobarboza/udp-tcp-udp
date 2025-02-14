@@ -54,10 +54,10 @@ Options:
       Default: 0 (forever)
       Example: -timer 600
 
-  -mpegtsBuffer <number>
+  -mpegtsBuffer <number> (>50)
       Number of packets to send on a TCP connection.
       Default: 50
-      Example: -mpegtsBuffer 30
+      Example: -mpegtsBuffer 60
 
   -packetSize <size>
       Packet size setting.
@@ -177,11 +177,14 @@ func ConvertMpegtsBuf(buff string) int {
 func convertGeneric(value string, defaultValue int, message string) int {
 	if value != "" {
 		var err error
-		timerNumber, err := strconv.Atoi(value)
+		number, err := strconv.Atoi(value)
 		if err != nil {
 			messageAndExit(message)
 		}
-		return timerNumber
+		if number < defaultValue {
+			return defaultValue
+		}
+		return number
 	}
 	return defaultValue
 }
