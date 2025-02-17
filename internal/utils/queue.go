@@ -17,7 +17,9 @@ type OrderedQueue interface {
 }
 
 func NewQueue() OrderedQueue {
-	return &orderedQueue{}
+	return &orderedQueue{
+		data: make([]*TCPBuffData, 0),
+	}
 }
 
 type orderedQueue struct {
@@ -25,35 +27,44 @@ type orderedQueue struct {
 	mu   sync.Mutex
 }
 
-func (ld *orderedQueue) Add(data *TCPBuffData) {
-	ld.mu.Lock()
-	ld.data = append(ld.data, data)
-	for i, d := range ld.data {
-		for j, d2 := range ld.data {
-			if d.Counter > d2.Counter {
-				temp := ld.data[i]
-				ld.data[i] = ld.data[j]
-				ld.data[j] = temp
-			}
-		}
-	}
-	ld.mu.Unlock()
+func (oq *orderedQueue) Add(data *TCPBuffData) {
+	oq.mu.Lock()
+	defer oq.mu.Unlock()
+
+	oq.data = append(oq.data, nil)
+	index := oq.findInsertIndex(data.Counter)
+	copy(oq.data[index+1:], oq.data[index:])
+	oq.data[index] = data
 }
 
-func (ld *orderedQueue) Pop() *TCPBuffData {
-	ld.mu.Lock()
-	defer ld.mu.Unlock()
+func (oq *orderedQueue) findInsertIndex(counter uint64) int {
+	low, high := 0, len(oq.data)-1
+	for low <= high {
+		mid := low + (high-low)/2
+		if oq.data[mid].Counter < counter {
+			low = mid + 1
+		} else {
+			high = mid - 1
+		}
+	}
+	return low
+}
 
-	i := len(ld.data) - 1
-	if i < 0 {
+func (oq *orderedQueue) Pop() *TCPBuffData {
+	oq.mu.Lock()
+	defer oq.mu.Unlock()
+
+	if len(oq.data) == 0 {
 		return nil
 	}
-	d := ld.data[i]
-	ld.data = ld.data[:i]
+	d := oq.data[0]
+	oq.data = oq.data[1:]
 
 	return d
 }
 
-func (ls *orderedQueue) Length() int {
-	return len(ls.data)
+func (oq *orderedQueue) Length() int {
+	oq.mu.Lock()
+	defer oq.mu.Unlock()
+	return len(oq.data)
 }
