@@ -7,7 +7,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/alvinobarboza/udp-tcp-udp/internal/filehandler"
+	"github.com/alvinobarboza/udp-tcp-udp/internal/args"
+	"github.com/alvinobarboza/udp-tcp-udp/internal/utils"
 )
 
 type TCPServer interface {
@@ -15,24 +16,20 @@ type TCPServer interface {
 }
 
 type tcpServer struct {
-	udp     UDPSender
-	file    filehandler.FileHandler
+	wk      Worker
 	ipAddr  string
 	counter uint32
 	mu      sync.Mutex
 }
 
-func NewTCPServer(ipaddr string, udp UDPSender, file filehandler.FileHandler) TCPServer {
+func NewTCPServer(ipaddr string, wk Worker) TCPServer {
 	return &tcpServer{
-		udp:    udp,
-		file:   file,
+		wk:     wk,
 		ipAddr: ipaddr,
 	}
 }
 
 func (ts *tcpServer) Listen() error {
-	defer ts.udp.CloseConn()
-
 	listener, err := net.Listen("tcp", ts.ipAddr)
 	if err != nil {
 		return err
@@ -40,6 +37,7 @@ func (ts *tcpServer) Listen() error {
 	defer listener.Close()
 
 	log.Println("Listening on:", ts.ipAddr)
+	go ts.wk.Start(true)
 
 	for {
 		conn, errC := listener.Accept()
@@ -58,7 +56,7 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 	local := ts.counter
 	ts.mu.Unlock()
 
-	header := make([]byte, 14)
+	header := make([]byte, 12)
 	_, errH := conn.Read(header)
 
 	if errH != nil {
@@ -76,37 +74,33 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 		return
 	}
 
-	pCount := binary.LittleEndian.Uint64(header[0:8])
-	pMs := binary.LittleEndian.Uint32(header[8:12])
-	pSize := binary.LittleEndian.Uint16(header[12:14])
+	tcpBuf := &utils.TCPBuffData{
+		Counter: binary.LittleEndian.Uint64(header[0:8]),
+		MS:      binary.LittleEndian.Uint32(header[8:12]),
+	}
 
-	fmt.Println(pCount, pMs, pSize)
-	data := make([]byte, pSize)
-	// dataToWrite := make([]byte, 0)
+	data := make([]byte, args.MPEGTS_PKT_DEFAULT)
 	for {
 		dRead, errR := conn.Read(data)
 
 		if errR != nil {
 			fmt.Println()
-			log.Println(errR, "req: ", pCount)
+			log.Println(errR, "req: ", tcpBuf.Counter)
 			fmt.Println()
 			return
 		}
-		fmt.Printf("%02d\n", dRead)
 		if dRead == 5 && eofFromClient(data) {
 			fmt.Println()
-			log.Println("Closed betwen transmission", local, pCount)
+			log.Println("Closed betwen transmission", local, tcpBuf.Counter)
 			fmt.Println()
 			return
 		}
 		if dRead == 2 {
 			break
 		}
-		ts.udp.Write(data)
-		// dataToWrite = append(dataToWrite, data...)
+		tcpBuf.Data = append(tcpBuf.Data, data[:dRead]...)
 	}
-
-	// ts.file.Write(dataToWrite)
+	go ts.wk.Enqueue(tcpBuf)
 
 	conn.Write([]byte("Received"))
 }

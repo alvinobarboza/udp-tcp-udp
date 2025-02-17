@@ -8,6 +8,7 @@ import (
 	"github.com/alvinobarboza/udp-tcp-udp/internal/args"
 	"github.com/alvinobarboza/udp-tcp-udp/internal/filehandler"
 	"github.com/alvinobarboza/udp-tcp-udp/internal/tcpserver"
+	"github.com/alvinobarboza/udp-tcp-udp/internal/utils"
 )
 
 func main() {
@@ -23,15 +24,20 @@ func main() {
 	args.ValidateMandatoryServer(listenIp, localMcastIp, remoteMcastIp)
 
 	log.SetFlags(log.Lshortfile)
+
+	// TODO: Adjust filehandling
 	file := filehandler.NewFileHandler()
 	file.NewFile("teste.bin")
+	// END
 
 	updSender, err := tcpserver.NewUDPSender(localMcastIp, remoteMcastIp)
 	if err != nil {
 		panic(err)
 	}
 
-	tcpServer := tcpserver.NewTCPServer(listenIp, updSender, file)
+	worker := tcpserver.NewWorker(file, updSender, utils.NewQueue())
+
+	tcpServer := tcpserver.NewTCPServer(listenIp, worker)
 
 	if errL := tcpServer.Listen(); errL != nil {
 		panic(errL)
