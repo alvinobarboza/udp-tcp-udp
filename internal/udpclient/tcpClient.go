@@ -66,7 +66,6 @@ func (tcp *tcpClient) Write(
 	header := headerData(
 		datagram.Counter,
 		datagram.MS,
-		uint16(args.MPEGTS_PKT_DEFAULT),
 	)
 
 	_, err1 := conn.Write(header)
@@ -112,10 +111,9 @@ func (tcp *tcpClient) Write(
 	t <- "ok"
 }
 
-func headerData(count uint64, ms uint32, size uint16) []byte {
-	header := append(
+func headerData(count uint64, ms uint32) []byte {
+	return append(
 		utils.Int64ToByte(count),
 		utils.Int32ToByte(ms)...,
 	)
-	return append(header, utils.Int16ToByte(size)...)
 }
