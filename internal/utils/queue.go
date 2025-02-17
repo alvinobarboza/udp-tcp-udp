@@ -31,8 +31,8 @@ func (oq *orderedQueue) Add(data *TCPBuffData) {
 	oq.mu.Lock()
 	defer oq.mu.Unlock()
 
-	oq.data = append(oq.data, nil)
 	index := oq.findInsertIndex(data.Counter)
+	oq.data = append(oq.data, nil)
 	copy(oq.data[index+1:], oq.data[index:])
 	oq.data[index] = data
 }
