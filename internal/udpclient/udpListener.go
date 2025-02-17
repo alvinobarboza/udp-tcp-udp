@@ -89,8 +89,8 @@ func (ul *udpListener) Listen() error {
 			tcpBuffer := make([]byte, 0)
 
 			now := time.Now()
+			buf := make([]byte, ul.packetSize)
 			for i := 0; i < ul.tcpMultiplierBuf; i++ {
-				buf := make([]byte, ul.packetSize)
 				countBytes, _, errC := conn.ReadFrom(buf)
 
 				if errC != nil {
@@ -98,9 +98,10 @@ func (ul *udpListener) Listen() error {
 				}
 				tcpBuffer = append(tcpBuffer, buf[:countBytes]...)
 			}
+
 			tcpBuff := &utils.TCPBuffData{
 				Data:    tcpBuffer,
-				MS:      uint32(time.Since(now).Abs().Microseconds()),
+				MS:      uint32(time.Since(now).Abs().Microseconds()) / uint32(ul.tcpMultiplierBuf),
 				Counter: uint64(now.UnixMilli()),
 			}
 
