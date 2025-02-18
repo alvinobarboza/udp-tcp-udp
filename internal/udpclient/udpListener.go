@@ -70,46 +70,65 @@ func (ul *udpListener) Listen() error {
 	errChan := make(chan error)
 	connSignal := make(chan string)
 
-	for {
-		tcpCon, errCon := ul.tcpHandler.GetConn()
-		if errCon != nil {
-			return errCon
+	end := ""
+	var errReturn error
+
+	go func() {
+		for {
+			select {
+			case val := <-done:
+				close(connSignal)
+				end = val
+				return
+			case val := <-errChan:
+				close(connSignal)
+				end = val.Error()
+				errReturn = val
+				return
+			}
+
 		}
-		select {
-		case res := <-done:
-			close(connSignal)
-			ul.tcpHandler.Close(tcpCon)
-			log.Println(res)
-			return nil
-		case err := <-errChan:
-			close(connSignal)
-			ul.tcpHandler.Close(tcpCon)
-			return err
-		default:
-			tcpBuffer := make([]byte, 0)
+	}()
 
-			now := time.Now()
-			buf := make([]byte, ul.packetSize)
-			for i := 0; i < ul.tcpMultiplierBuf; i++ {
-				countBytes, _, errC := conn.ReadFrom(buf)
+	bufCh := make(chan []byte, 100)
 
-				if errC != nil {
-					return errC
+	go func() {
+		tcpBuffer := make([]byte, 0)
+		counter := 0
+		for data := range bufCh {
+			// if le > 20 {
+			// fmt.Println(len(bufCh), len(data))
+			// }
+			tcpBuffer = append(tcpBuffer, data...)
+			counter++
+			if counter == ul.tcpMultiplierBuf {
+				tcpBuff := &utils.TCPBuffData{
+					Data:    tcpBuffer,
+					MS:      uint32(100),
+					Counter: uint64(time.Now().UnixMilli()),
 				}
-				tcpBuffer = append(tcpBuffer, buf[:countBytes]...)
-			}
 
-			tcpBuff := &utils.TCPBuffData{
-				Data:    tcpBuffer,
-				MS:      uint32(time.Since(now).Abs().Microseconds()) / uint32(ul.tcpMultiplierBuf),
-				Counter: uint64(now.UnixMilli()),
+				tcpBuffer = make([]byte, 0)
+				counter = 0
+				go ul.tcpHandler.Write(
+					tcpBuff,
+					errChan, connSignal,
+				)
 			}
-
-			go ul.tcpHandler.Write(
-				tcpCon, tcpBuff,
-				errChan, connSignal,
-			)
 		}
+	}()
+
+	buf := make([]byte, ul.packetSize)
+	for {
+		if end != "" {
+			log.Println(end)
+			return errReturn
+		}
+		countBytes, _, errC := conn.ReadFrom(buf)
+		if errC != nil {
+			return errC
+		}
+		bufCh <- buf[:countBytes]
 	}
 }
 

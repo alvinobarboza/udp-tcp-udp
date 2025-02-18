@@ -80,6 +80,7 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 	}
 
 	data := make([]byte, args.MPEGTS_PKT_DEFAULT)
+	counter := 0
 	for {
 		dRead, errR := conn.Read(data)
 
@@ -98,9 +99,11 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 		if dRead == 2 {
 			break
 		}
+		counter++
 		tcpBuf.Data = append(tcpBuf.Data, data[:dRead]...)
 	}
-	go ts.wk.Enqueue(tcpBuf)
+	fmt.Println(len(tcpBuf.Data), counter)
+	ts.wk.Enqueue(tcpBuf)
 
 	conn.Write([]byte("Received"))
 }

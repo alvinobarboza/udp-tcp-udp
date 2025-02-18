@@ -3,14 +3,13 @@ package udpclient
 import (
 	"fmt"
 	"net"
-	"sync"
 
 	"github.com/alvinobarboza/udp-tcp-udp/internal/args"
 	"github.com/alvinobarboza/udp-tcp-udp/internal/utils"
 )
 
 type TCPClient interface {
-	Write(net.Conn, *utils.TCPBuffData, chan error, chan string)
+	Write(*utils.TCPBuffData, chan error, chan string)
 	GetConn() (net.Conn, error)
 	Close(net.Conn) error
 }
@@ -27,9 +26,7 @@ func NewTCPClient(servAddr string) (TCPClient, error) {
 }
 
 type tcpClient struct {
-	mu         sync.Mutex
-	tcpAddr    *net.TCPAddr
-	pktCounter uint16
+	tcpAddr *net.TCPAddr
 }
 
 func (tcp *tcpClient) GetConn() (net.Conn, error) {
@@ -49,24 +46,26 @@ func (tcp *tcpClient) Close(conn net.Conn) error {
 }
 
 func (tcp *tcpClient) Write(
-	conn net.Conn, datagram *utils.TCPBuffData,
+	datagram *utils.TCPBuffData,
 	err chan error, t chan string,
 ) {
+	conn, errC := tcp.GetConn()
+	if errC != nil {
+		err <- errC
+		return
+	}
 	defer conn.Close()
 
 	go func(c net.Conn, terminator chan string) {
-		value := <-terminator
-		if value == "" {
-			tcp.Close(c)
-		}
+		<-terminator
+		tcp.Close(c)
 	}(conn, t)
-
-	fmt.Println("Conn:", datagram.Counter, datagram.MS)
 
 	header := headerData(
 		datagram.Counter,
 		datagram.MS,
 	)
+	fmt.Println("Conn:", datagram.Counter, datagram.MS, len(header), len(datagram.Data))
 
 	_, err1 := conn.Write(header)
 	if err1 != nil {
@@ -75,8 +74,9 @@ func (tcp *tcpClient) Write(
 	}
 
 	pktToSend := make([]byte, 0)
-	for i, data := range datagram.Data {
-		if i%args.MPEGTS_PKT_DEFAULT == 0 && len(pktToSend) > 0 {
+	for _, data := range datagram.Data {
+		pktToSend = append(pktToSend, data)
+		if len(pktToSend) == args.MPEGTS_PKT_DEFAULT {
 			_, err1 := conn.Write(pktToSend)
 			if err1 != nil {
 				err <- err1
@@ -84,7 +84,6 @@ func (tcp *tcpClient) Write(
 			}
 			pktToSend = make([]byte, 0)
 		}
-		pktToSend = append(pktToSend, data)
 	}
 
 	if len(pktToSend) > 0 && len(pktToSend) < args.MPEGTS_PKT_DEFAULT {
@@ -108,7 +107,7 @@ func (tcp *tcpClient) Write(
 		err <- err3
 		return
 	}
-	t <- "ok"
+	err <- fmt.Errorf("ended")
 }
 
 func headerData(count uint64, ms uint32) []byte {
