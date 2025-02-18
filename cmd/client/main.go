@@ -9,6 +9,12 @@ import (
 )
 
 func main() {
+	// f, perr := os.Create("cpu-client.pprof")
+	// if perr != nil {
+	// 	log.Fatal(perr)
+	// }
+	// pprof.StartCPUProfile(f)
+	// defer pprof.StopCPUProfile()
 
 	defer fmt.Println()
 	argsValues := os.Args
