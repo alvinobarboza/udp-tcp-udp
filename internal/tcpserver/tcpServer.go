@@ -37,7 +37,7 @@ func (ts *tcpServer) Listen() error {
 	defer listener.Close()
 
 	log.Println("Listening on:", ts.ipAddr)
-	go ts.wk.Start(true)
+	go ts.wk.Start()
 
 	for {
 		conn, errC := listener.Accept()
@@ -80,7 +80,6 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 	}
 
 	data := make([]byte, args.MPEGTS_PKT_DEFAULT)
-	counter := 0
 	for {
 		dRead, errR := conn.Read(data)
 
@@ -99,10 +98,8 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 		if dRead == 2 {
 			break
 		}
-		counter++
 		tcpBuf.Data = append(tcpBuf.Data, data[:dRead]...)
 	}
-	fmt.Println(len(tcpBuf.Data), counter)
 	ts.wk.Enqueue(tcpBuf)
 
 	conn.Write([]byte("Received"))
