@@ -94,18 +94,20 @@ func (ul *udpListener) Listen() error {
 	bufCh := make(chan []byte, 100)
 
 	go func() {
+		now := time.Now()
 		for data := range bufCh {
 			// if le > 20 {
 			// fmt.Println(len(bufCh), len(data))
 			// }
 			tcpBuff := &utils.TCPBuffData{
 				Data:    data,
-				MS:      uint32(100),
+				MS:      uint32(time.Duration(time.Since(now).Microseconds()) / time.Duration(ul.tcpMultiplierBuf)),
 				Counter: uint64(time.Now().UnixMilli()),
 			}
-			ul.fileHandler.Write(tcpBuff.Data)
-			fmt.Println(len(bufCh))
-			errChan <- fmt.Errorf("ended")
+			fmt.Println(time.Since(now).Microseconds())
+			now = time.Now()
+			go ul.tcpHandler.Write(tcpBuff, errChan, connSignal)
+			// errChan <- fmt.Errorf("ended")
 
 		}
 	}()

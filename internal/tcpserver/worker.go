@@ -3,6 +3,7 @@ package tcpserver
 import (
 	"fmt"
 
+	"github.com/alvinobarboza/udp-tcp-udp/internal/args"
 	"github.com/alvinobarboza/udp-tcp-udp/internal/filehandler"
 	"github.com/alvinobarboza/udp-tcp-udp/internal/utils"
 )
@@ -11,7 +12,7 @@ const MAGIC_NUMBER = 3000
 const ERR_BEFORE_RETURN = 30
 
 type Worker interface {
-	Start(bool)
+	Start()
 	Enqueue(*utils.TCPBuffData)
 }
 
@@ -30,9 +31,11 @@ type worker struct {
 	oq   utils.OrderedQueue
 }
 
-func (w *worker) Start(saveToFile bool) {
+func (w *worker) Start() {
 	defer w.udp.CloseConn()
-	defer w.file.CloseConn()
+	if w.file != nil {
+		defer w.file.CloseConn()
+	}
 
 	for {
 		data := w.oq.Pop()
@@ -42,30 +45,31 @@ func (w *worker) Start(saveToFile bool) {
 		}
 
 		fmt.Println("POP:", data.Counter, data.MS)
-		if saveToFile {
+		if w.file != nil {
 			w.file.Write(data.Data)
 		}
-		// errCounter := 0
-		// pktToSend := make([]byte, 0)
-		// for i, pkt := range data.Data {
-		// 	if i%args.MPEGTS_PKT_DEFAULT == 0 {
-		// 		time.Sleep(time.Microsecond * time.Duration(data.MS))
-		// 		err := w.udp.Write(pktToSend)
-		// 		if err != nil {
-		// 			errCounter++
-		// 			if errCounter > ERR_BEFORE_RETURN {
-		// 				break
-		// 			}
-		// 		}
-		// 		pktToSend = make([]byte, 0)
-		// 	}
-		// 	pktToSend = append(pktToSend, pkt)
-		// }
+		errCounter := 0
+		// pktToSend := make([]byte, args.MPEGTS_PKT_DEFAULT)
+		rounds := len(data.Data) / args.MPEGTS_PKT_DEFAULT
+
+		start := 0
+		end := args.MPEGTS_PKT_DEFAULT
+		for range rounds {
+			// copy(pktToSend, data.Data[start:end])
+			err := w.udp.Write(data.Data[start:end])
+			if err != nil {
+				errCounter++
+				if errCounter > ERR_BEFORE_RETURN {
+					break
+				}
+			}
+			start = end
+			end += args.MPEGTS_PKT_DEFAULT
+		}
 		// if len(pktToSend) > 0 &&
 		// 	len(pktToSend) < args.MPEGTS_PKT_DEFAULT &&
 		// 	errCounter < ERR_BEFORE_RETURN {
 
-		// 	time.Sleep(time.Microsecond * time.Duration(data.MS))
 		// 	err := w.udp.Write(pktToSend)
 		// 	if err != nil {
 		// 		continue
