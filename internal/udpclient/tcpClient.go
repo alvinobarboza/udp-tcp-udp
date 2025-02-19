@@ -107,7 +107,6 @@ func (tcp *tcpClient) Write(
 		err <- err3
 		return
 	}
-	err <- fmt.Errorf("ended")
 }
 
 func headerData(count uint64, ms uint32) []byte {
