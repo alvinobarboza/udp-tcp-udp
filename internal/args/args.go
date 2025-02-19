@@ -11,7 +11,7 @@ type ArgValue string
 
 const (
 	// Args for both
-	//TODO: FILE_SAVE      ArgValue = "-save_file" // file name to save, if specified
+	FILE_SAVE ArgValue = "-save_file" // file name to save, if specified
 	//TODO: FILE_SIZE      ArgValue = "-save_file" // how long in bytes should it be saved, : default 10000000 bytes
 
 	// Args for client
@@ -119,6 +119,15 @@ func ValueFromArg(args []string, key ArgValue) string {
 		}
 	}
 	return ""
+}
+
+func ValueFromArgFileSave(args []string, key ArgValue) bool {
+	for _, arg := range args {
+		if arg == string(key) {
+			return true
+		}
+	}
+	return false
 }
 
 func ValidateMandatoryClient(s, m, e string) {
