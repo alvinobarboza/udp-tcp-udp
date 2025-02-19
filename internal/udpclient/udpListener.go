@@ -1,6 +1,7 @@
 package udpclient
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -93,28 +94,19 @@ func (ul *udpListener) Listen() error {
 	bufCh := make(chan []byte, 100)
 
 	go func() {
-		tcpBuffer := make([]byte, 0)
-		counter := 0
 		for data := range bufCh {
 			// if le > 20 {
 			// fmt.Println(len(bufCh), len(data))
 			// }
-			tcpBuffer = append(tcpBuffer, data...)
-			counter++
-			if counter == ul.tcpMultiplierBuf {
-				tcpBuff := &utils.TCPBuffData{
-					Data:    tcpBuffer,
-					MS:      uint32(100),
-					Counter: uint64(time.Now().UnixMilli()),
-				}
-
-				tcpBuffer = make([]byte, 0)
-				counter = 0
-				go ul.tcpHandler.Write(
-					tcpBuff,
-					errChan, connSignal,
-				)
+			tcpBuff := &utils.TCPBuffData{
+				Data:    data,
+				MS:      uint32(100),
+				Counter: uint64(time.Now().UnixMilli()),
 			}
+			ul.fileHandler.Write(tcpBuff.Data)
+			fmt.Println(len(bufCh))
+			errChan <- fmt.Errorf("ended")
+
 		}
 	}()
 
@@ -124,11 +116,16 @@ func (ul *udpListener) Listen() error {
 			log.Println(end)
 			return errReturn
 		}
-		countBytes, _, errC := conn.ReadFrom(buf)
-		if errC != nil {
-			return errC
+
+		tcpBuffer := make([]byte, 0)
+		for range ul.tcpMultiplierBuf {
+			read, _, errC := conn.ReadFromUDP(buf)
+			if errC != nil {
+				return errC
+			}
+			tcpBuffer = append(tcpBuffer, buf[:read]...)
 		}
-		bufCh <- buf[:countBytes]
+		bufCh <- tcpBuffer
 	}
 }
 

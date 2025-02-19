@@ -2,19 +2,22 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"runtime/pprof"
 
 	"github.com/alvinobarboza/udp-tcp-udp/internal/args"
+	"github.com/alvinobarboza/udp-tcp-udp/internal/filehandler"
 	"github.com/alvinobarboza/udp-tcp-udp/internal/udpclient"
 )
 
 func main() {
-	// f, perr := os.Create("cpu-client.pprof")
-	// if perr != nil {
-	// 	log.Fatal(perr)
-	// }
-	// pprof.StartCPUProfile(f)
-	// defer pprof.StopCPUProfile()
+	f, perr := os.Create("cpu-client.pprof")
+	if perr != nil {
+		log.Fatal(perr)
+	}
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
 
 	defer fmt.Println()
 	argsValues := os.Args
@@ -36,17 +39,17 @@ func main() {
 	mpegtsPkt := args.ValueFromArg(argsValues, args.MPEGTS_PKT)
 	mpegtsPktSize := args.ConvertMpegtsPktSize(mpegtsPkt)
 
-	// file := filehandler.NewFileHandler()
-	// if err := file.NewFile("teste.bin"); err != nil {
-	// 	panic(err)
-	// }
+	file := filehandler.NewFileHandler()
+	if err := file.NewFile("teste-c.bin"); err != nil {
+		panic(err)
+	}
 
 	tcpCon, errc := udpclient.NewTCPClient(serverIp)
 	if errc != nil {
 		panic(errc)
 	}
 
-	udpListener := udpclient.NewUDPListener(mpegtsBufSize, mpegtsPktSize, timerNumber, tcpCon, nil)
+	udpListener := udpclient.NewUDPListener(mpegtsBufSize, mpegtsPktSize, timerNumber, tcpCon, file)
 
 	if err := udpListener.SetUpListener(ethName, mcastIp); err != nil {
 		panic(err)
