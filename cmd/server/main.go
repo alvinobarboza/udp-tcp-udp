@@ -20,15 +20,17 @@ func main() {
 	listenIp := args.ValueFromArg(argsValues, args.LISTEN_IP)
 	localMcastIp := args.ValueFromArg(argsValues, args.LOCAL_MCAST)
 	remoteMcastIp := args.ValueFromArg(argsValues, args.REMOTE_MCAST)
+	saveFile := args.ValueFromArgFileSave(argsValues, args.FILE_SAVE)
 
 	args.ValidateMandatoryServer(listenIp, localMcastIp, remoteMcastIp)
 
 	log.SetFlags(log.Lshortfile)
 
-	// TODO: Adjust filehandling
-	file := filehandler.NewFileHandler()
-	file.NewFile("teste.bin")
-	// END
+	var file filehandler.FileHandler
+	if saveFile {
+		file = filehandler.NewFileHandler()
+		file.NewFile("teste.bin")
+	}
 
 	updSender, err := tcpserver.NewUDPSender(localMcastIp, remoteMcastIp)
 	if err != nil {
