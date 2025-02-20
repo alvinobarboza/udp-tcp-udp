@@ -33,7 +33,7 @@ func (f *fileHandler) Write(data []byte) error {
 }
 
 func (f *fileHandler) NewFile(filename string) error {
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
