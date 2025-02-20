@@ -96,9 +96,11 @@ func (ul *udpListener) Listen() error {
 	go func() {
 		now := time.Now()
 		for data := range bufCh {
-			// if le > 20 {
-			// fmt.Println(len(bufCh), len(data))
-			// }
+
+			if ul.fileHandler != nil {
+				go ul.fileHandler.Write(data)
+			}
+
 			tcpBuff := &utils.TCPBuffData{
 				Data:    data,
 				MS:      uint32(time.Duration(time.Since(now).Microseconds()) / time.Duration(ul.tcpMultiplierBuf)),

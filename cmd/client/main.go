@@ -27,6 +27,7 @@ func main() {
 	serverIp := args.ValueFromArg(argsValues, args.SERVER_ARG)
 	mcastIp := args.ValueFromArg(argsValues, args.MCAST_ARG)
 	ethName := args.ValueFromArg(argsValues, args.NET_INTER_ARG)
+	saveFile := args.ValueFromArgFileSave(argsValues, args.FILE_SAVE)
 
 	args.ValidateMandatoryClient(serverIp, mcastIp, ethName)
 
@@ -39,9 +40,12 @@ func main() {
 	mpegtsPkt := args.ValueFromArg(argsValues, args.MPEGTS_PKT)
 	mpegtsPktSize := args.ConvertMpegtsPktSize(mpegtsPkt)
 
-	file := filehandler.NewFileHandler()
-	if err := file.NewFile("teste-c.bin"); err != nil {
-		panic(err)
+	var file filehandler.FileHandler
+	if saveFile {
+		file = filehandler.NewFileHandler()
+		if err := file.NewFile("client.bin"); err != nil {
+			panic(err)
+		}
 	}
 
 	tcpCon, errc := udpclient.NewTCPClient(serverIp)

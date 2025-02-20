@@ -29,7 +29,7 @@ func main() {
 	var file filehandler.FileHandler
 	if saveFile {
 		file = filehandler.NewFileHandler()
-		file.NewFile("teste.bin")
+		file.NewFile("server.bin")
 	}
 
 	updSender, err := tcpserver.NewUDPSender(localMcastIp, remoteMcastIp)
