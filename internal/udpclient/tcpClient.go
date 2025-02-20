@@ -61,11 +61,8 @@ func (tcp *tcpClient) Write(
 		tcp.Close(c)
 	}(conn, t)
 
-	header := headerData(
-		datagram.Counter,
-		datagram.MS,
-	)
-	fmt.Println("Conn:", datagram.Counter, datagram.MS, len(header), len(datagram.Data))
+	header := headerData(datagram.Counter)
+	fmt.Println("Conn:", datagram.Counter, len(header), len(datagram.Data))
 
 	_, err1 := conn.Write(header)
 	if err1 != nil {
@@ -109,9 +106,6 @@ func (tcp *tcpClient) Write(
 	}
 }
 
-func headerData(count uint64, ms uint32) []byte {
-	return append(
-		utils.Int64ToByte(count),
-		utils.Int32ToByte(ms)...,
-	)
+func headerData(count uint64) []byte {
+	return utils.Int64ToByte(count)
 }

@@ -56,7 +56,7 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 	local := ts.counter
 	ts.mu.Unlock()
 
-	header := make([]byte, 12)
+	header := make([]byte, 8)
 	_, errH := conn.Read(header)
 
 	if errH != nil {
@@ -75,8 +75,7 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 	}
 
 	tcpBuf := &utils.TCPBuffData{
-		Counter: binary.LittleEndian.Uint64(header[0:8]),
-		MS:      binary.LittleEndian.Uint32(header[8:12]),
+		Counter: binary.LittleEndian.Uint64(header),
 	}
 
 	data := make([]byte, args.MPEGTS_PKT_DEFAULT)

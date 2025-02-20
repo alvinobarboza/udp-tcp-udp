@@ -1,7 +1,7 @@
 package tcpserver
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/alvinobarboza/udp-tcp-udp/internal/args"
 	"github.com/alvinobarboza/udp-tcp-udp/internal/filehandler"
@@ -44,18 +44,16 @@ func (w *worker) Start() {
 			continue
 		}
 
-		fmt.Println("POP:", data.Counter, data.MS)
+		log.Println("POP:", data.Counter, len(data.Data))
 		if w.file != nil {
 			w.file.Write(data.Data)
 		}
 		errCounter := 0
-		// pktToSend := make([]byte, args.MPEGTS_PKT_DEFAULT)
 		rounds := len(data.Data) / args.MPEGTS_PKT_DEFAULT
 
 		start := 0
 		end := args.MPEGTS_PKT_DEFAULT
 		for range rounds {
-			// copy(pktToSend, data.Data[start:end])
 			err := w.udp.Write(data.Data[start:end])
 			if err != nil {
 				errCounter++
@@ -66,15 +64,6 @@ func (w *worker) Start() {
 			start = end
 			end += args.MPEGTS_PKT_DEFAULT
 		}
-		// if len(pktToSend) > 0 &&
-		// 	len(pktToSend) < args.MPEGTS_PKT_DEFAULT &&
-		// 	errCounter < ERR_BEFORE_RETURN {
-
-		// 	err := w.udp.Write(pktToSend)
-		// 	if err != nil {
-		// 		continue
-		// 	}
-		// }
 	}
 }
 

@@ -103,7 +103,6 @@ func (ul *udpListener) Listen() error {
 
 			tcpBuff := &utils.TCPBuffData{
 				Data:    data,
-				MS:      uint32(time.Duration(time.Since(now).Microseconds()) / time.Duration(ul.tcpMultiplierBuf)),
 				Counter: uint64(time.Now().UnixMilli()),
 			}
 			fmt.Println(time.Since(now).Microseconds())

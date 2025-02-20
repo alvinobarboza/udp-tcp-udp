@@ -6,7 +6,6 @@ import (
 
 type TCPBuffData struct {
 	Counter uint64
-	MS      uint32
 	Data    []byte
 }
 
