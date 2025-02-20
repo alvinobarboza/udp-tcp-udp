@@ -80,11 +80,11 @@ Options:
       Example: -listen_ip 0.0.0.0:0000
 
   -local_mcast <IP:PORT>
-      Ethernet IP to listen on.
+      Ethernet IP to send on.
       Example: -local_mcast 0.0.0.0:0000
 
   -remote_mcast <IP:PORT>
-      Multicast IP to listen to.
+      Multicast IP to send to.
       Example: -remote_mcast 0.0.0.0:0000
 
   -h 
