@@ -10,8 +10,8 @@ import (
 
 type TCPClient interface {
 	Write(*utils.TCPBuffData, chan error, chan string)
-	GetConn() (net.Conn, error)
-	Close(net.Conn) error
+	GetConn() (*net.TCPConn, error)
+	Close(*net.TCPConn) error
 }
 
 func NewTCPClient(servAddr string) (TCPClient, error) {
@@ -29,15 +29,18 @@ type tcpClient struct {
 	tcpAddr *net.TCPAddr
 }
 
-func (tcp *tcpClient) GetConn() (net.Conn, error) {
+func (tcp *tcpClient) GetConn() (*net.TCPConn, error) {
 	conn, err := net.DialTCP("tcp", nil, tcp.tcpAddr)
 	if err != nil {
+		return nil, err
+	}
+	if err := conn.SetWriteBuffer(1024 * 1024 * 20); err != nil {
 		return nil, err
 	}
 	return conn, nil
 }
 
-func (tcp *tcpClient) Close(conn net.Conn) error {
+func (tcp *tcpClient) Close(conn *net.TCPConn) error {
 	_, err2 := conn.Write([]byte{0xff, 0xff, 0xff, 0xff, 0xff})
 	if err2 != nil {
 		return err2
@@ -56,7 +59,7 @@ func (tcp *tcpClient) Write(
 	}
 	defer conn.Close()
 
-	go func(c net.Conn, terminator chan string) {
+	go func(c *net.TCPConn, terminator chan string) {
 		<-terminator
 		tcp.Close(c)
 	}(conn, t)

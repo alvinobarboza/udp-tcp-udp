@@ -129,6 +129,7 @@ func (ul *udpListener) Listen() error {
 			tcpBuffer = append(tcpBuffer, buf[:read]...)
 		}
 		bufCh <- tcpBuffer
+		time.Sleep(time.Second * 10)
 	}
 }
 

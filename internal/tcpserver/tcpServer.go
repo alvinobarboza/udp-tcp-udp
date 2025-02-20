@@ -30,7 +30,12 @@ func NewTCPServer(ipaddr string, wk Worker) TCPServer {
 }
 
 func (ts *tcpServer) Listen() error {
-	listener, err := net.Listen("tcp", ts.ipAddr)
+	tcpAddr, errt := net.ResolveTCPAddr("tcp", ts.ipAddr)
+	if errt != nil {
+		return errt
+	}
+
+	listener, err := net.ListenTCP("tcp", tcpAddr)
 	if err != nil {
 		return err
 	}
@@ -40,16 +45,19 @@ func (ts *tcpServer) Listen() error {
 	go ts.wk.Start()
 
 	for {
-		conn, errC := listener.Accept()
+		conn, errC := listener.AcceptTCP()
 		if errC != nil {
 			return errC
+		}
+		if err := conn.SetReadBuffer(1024 * 1024 * 20); err != nil {
+			return err
 		}
 
 		go ts.handlRequest(conn)
 	}
 }
 
-func (ts *tcpServer) handlRequest(conn net.Conn) {
+func (ts *tcpServer) handlRequest(conn *net.TCPConn) {
 	defer conn.Close()
 	ts.mu.Lock()
 	ts.counter++
@@ -81,7 +89,6 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 	data := make([]byte, args.MPEGTS_PKT_DEFAULT)
 	for {
 		dRead, errR := conn.Read(data)
-
 		if errR != nil {
 			fmt.Println()
 			log.Println(errR, "req: ", tcpBuf.Counter)
@@ -99,6 +106,7 @@ func (ts *tcpServer) handlRequest(conn net.Conn) {
 		}
 		tcpBuf.Data = append(tcpBuf.Data, data[:dRead]...)
 	}
+	log.Println(len(tcpBuf.Data), "enqueue")
 	ts.wk.Enqueue(tcpBuf)
 
 	conn.Write([]byte("Received"))
