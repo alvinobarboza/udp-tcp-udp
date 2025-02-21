@@ -38,6 +38,10 @@ func (w *worker) Start() {
 	}
 
 	for {
+		if w.oq.Length() < 10 {
+			continue
+		}
+
 		data := w.oq.Pop()
 
 		if data == nil {
