@@ -26,12 +26,14 @@ const (
 	LISTEN_IP    ArgValue = "-listen_ip"    // TCP IP to listen
 	LOCAL_MCAST  ArgValue = "-local_mcast"  // IP from local interface to listen on
 	REMOTE_MCAST ArgValue = "-remote_mcast" // UDP IP to listen to
+	Q_WINDOW     ArgValue = "-q_window"     // Queue window before processing
 
 	// Default values
 	TS_PACKET_DEFAULT  int = 188
 	MPEGTS_PKT_DEFAULT int = 1316
 	TIMER_DEFAULT      int = 0
 	DEFAULT_TCP_PKT    int = 50
+	DEFAULT_Q_W        int = 4
 
 	USAGE_MESSAGE_CLIENT string = `
 Usage: udp-tcp-client [options]
@@ -55,7 +57,7 @@ Options:
       Example: -timer 600
 
   -mpegtsBuffer <number> (>50)
-      Number of packets to send on a TCP connection.
+      Number of packets(1316b * n) to send on a TCP connection.
       Default: 50
       Example: -mpegtsBuffer 60
 
@@ -86,6 +88,11 @@ Options:
   -remote_mcast <IP:PORT>
       Multicast IP to send to.
       Example: -remote_mcast 0.0.0.0:0000
+
+  -q_window <number>
+	  Number of items in the queue before processing.
+	  Default: 4
+      Example: -q_window 20
 
   -h 
       Help
@@ -181,6 +188,10 @@ func ConvertTimer(timer string) int {
 
 func ConvertMpegtsBuf(buff string) int {
 	return convertGeneric(buff, DEFAULT_TCP_PKT, "-mpegtsBuffer should be a number, pkt count to send on a TCP conn: default 50!")
+}
+
+func ConvertQWindow(q string) int {
+	return convertGeneric(q, DEFAULT_Q_W, "-q_window should be a number, the items before processing: default 4!")
 }
 
 func convertGeneric(value string, defaultValue int, message string) int {

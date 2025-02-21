@@ -24,6 +24,9 @@ func main() {
 
 	args.ValidateMandatoryServer(listenIp, localMcastIp, remoteMcastIp)
 
+	qWindow := args.ValueFromArg(argsValues, args.Q_WINDOW)
+	qWindowSize := args.ConvertQWindow(qWindow)
+
 	log.SetFlags(log.Lshortfile)
 
 	var file filehandler.FileHandler
@@ -37,7 +40,7 @@ func main() {
 		panic(err)
 	}
 
-	worker := tcpserver.NewWorker(file, updSender, utils.NewQueue())
+	worker := tcpserver.NewWorker(file, updSender, utils.NewQueue(), qWindowSize)
 
 	tcpServer := tcpserver.NewTCPServer(listenIp, worker)
 

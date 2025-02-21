@@ -17,18 +17,20 @@ type Worker interface {
 }
 
 func NewWorker(file filehandler.FileHandler,
-	udp UDPSender, oq utils.OrderedQueue) Worker {
+	udp UDPSender, oq utils.OrderedQueue, window int) Worker {
 	return &worker{
-		file: file,
-		udp:  udp,
-		oq:   oq,
+		file:   file,
+		udp:    udp,
+		oq:     oq,
+		window: window,
 	}
 }
 
 type worker struct {
-	udp  UDPSender
-	file filehandler.FileHandler
-	oq   utils.OrderedQueue
+	udp    UDPSender
+	file   filehandler.FileHandler
+	oq     utils.OrderedQueue
+	window int
 }
 
 func (w *worker) Start() {
@@ -38,7 +40,7 @@ func (w *worker) Start() {
 	}
 
 	for {
-		if w.oq.Length() < 10 {
+		if w.oq.Length() < w.window {
 			continue
 		}
 
