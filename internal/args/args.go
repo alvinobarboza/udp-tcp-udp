@@ -66,6 +66,9 @@ Options:
       Valid range: 188 (min) to 1316 (max)
       Default: 1316
       Example: -packetSize 376
+ 
+  -save_file
+      Boolean flag, on/off, if passed it will save a file with all mpegts packets = client.bin
 	
   -h 
       Help
@@ -93,6 +96,9 @@ Options:
 	  Number of items in the queue before processing.
 	  Default: 4
       Example: -q_window 20
+ 
+  -save_file
+      Boolean flag, on/off, if passed it will save a file with all mpegts packets = server.bin
 
   -h 
       Help
