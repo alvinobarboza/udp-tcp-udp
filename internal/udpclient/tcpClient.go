@@ -73,6 +73,7 @@ func (tcp *tcpClient) Write(
 		return
 	}
 
+	reply := make([]byte, 128)
 	pktToSend := make([]byte, 0)
 	for _, data := range datagram.Data {
 		pktToSend = append(pktToSend, data)
@@ -83,6 +84,11 @@ func (tcp *tcpClient) Write(
 				return
 			}
 			pktToSend = make([]byte, 0)
+			_, err3 := conn.Read(reply)
+			if err3 != nil {
+				err <- err3
+				return
+			}
 		}
 	}
 
@@ -100,13 +106,12 @@ func (tcp *tcpClient) Write(
 		return
 	}
 
-	reply := make([]byte, 1024)
-
 	_, err3 := conn.Read(reply)
 	if err3 != nil {
 		err <- err3
 		return
 	}
+	fmt.Println("ended")
 }
 
 func headerData(count uint64) []byte {

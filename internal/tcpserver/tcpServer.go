@@ -86,6 +86,7 @@ func (ts *tcpServer) handlRequest(conn *net.TCPConn) {
 		Counter: binary.LittleEndian.Uint64(header),
 	}
 
+	reply := []byte("ok")
 	data := make([]byte, args.MPEGTS_PKT_DEFAULT)
 	for {
 		dRead, errR := conn.Read(data)
@@ -105,11 +106,12 @@ func (ts *tcpServer) handlRequest(conn *net.TCPConn) {
 			break
 		}
 		tcpBuf.Data = append(tcpBuf.Data, data[:dRead]...)
+		conn.Write(reply)
 	}
 	log.Println(len(tcpBuf.Data), "enqueue")
 	ts.wk.Enqueue(tcpBuf)
 
-	conn.Write([]byte("Received"))
+	conn.Write(reply)
 }
 
 func eofFromClient(data []byte) bool {
