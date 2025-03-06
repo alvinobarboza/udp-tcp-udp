@@ -18,9 +18,9 @@ go build -o client cmd/client
 
 # CLI
 
-## Server
+## Client
 
-Usage: ./server [options]
+Usage: ./client [options]
 
 Options:
 
@@ -61,9 +61,9 @@ Options:
         Example: -h
 ```
 
-## Client
+## Server
 
-Usage: udp-tcp-server [options]
+Usage: ./server [options]
 
 Options:
 
