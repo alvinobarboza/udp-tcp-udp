@@ -3,3 +3,4 @@
 *.pprof
 server
 *.ts
+*.test.go
